@@ -4,7 +4,7 @@ from functions import *
 from board import *
 
 
-width, height = GetSystemMetrics(0), GetSystemMetrics(1)
+width, height = 1600, 850
 screen = pygame.display.set_mode((width, height))
 
 

@@ -1,11 +1,12 @@
 from functions import *
-from consts import *
+from main_game import *
 import pygame
 
 class Board:
+    global width, height, screen
     def __init__(self):
-        self.weight = size[0]
-        self.height = size[1]
+        self.weight = width
+        self.height = height
         self.height1 = 1300
         self.display = screen
         self.board = load_image("board.jpg")

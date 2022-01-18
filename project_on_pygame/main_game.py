@@ -13,7 +13,7 @@ FPS = 120
 class Start_Screen:
     def __init__(self):
         self.display, running = screen, True
-        Button(load_image("logo2.png", colorkey=-1), (130, 60))
+        Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5))
         Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1)
         Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2)
         Button(load_image("exit.png"), (WIDTH - 25, 15), 0)
@@ -29,6 +29,7 @@ class Start_Screen:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
             pygame.display.flip()
+            self.display.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, 0, WIDTH * 0.70, HEIGHT))
             self.display.fill(pygame.Color(250, 242, 242), pygame.Rect(0, 0, WIDTH, HEIGHT / 100 * 15))
             all_sprites.draw(screen)
             all_sprites.update()

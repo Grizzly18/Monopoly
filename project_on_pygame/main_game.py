@@ -10,7 +10,7 @@ from threading import Thread
 WIDTH, HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 all_sprites = pygame.sprite.Group()
-functs = {None: None, 0: terminate, 1: None, 2: "Login"}
+functs = {None: None, 0: terminate, 1: "MainPage", 2: "Login"}
 FPS = 120
 messages, online, NowPage = "", False, "MainPage"
 
@@ -149,7 +149,7 @@ class Button(pygame.sprite.Sprite):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
                 if functs[self.command] != None:
-                    if self.command == 2:
+                    if 1 <= self.command <= 2:
                         Pages = {"Login": Login, "MainPage": MainPage}
                         NowPage = functs[self.command]
                         Pages[functs[self.command]]()

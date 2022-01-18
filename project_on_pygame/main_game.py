@@ -1,4 +1,3 @@
-from click import command
 import pygame
 from win32api import GetSystemMetrics
 from functions import *
@@ -15,8 +14,8 @@ class Start_Screen:
     def __init__(self):
         self.display, running = screen, True
         Button(load_image("logo2.png", colorkey=-1), (130, 60))
-        Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 90), 1)
-        Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 95, 88), 2)
+        Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1)
+        Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2)
         Button(load_image("exit.png"), (WIDTH - 25, 15), 0)
         # font = pygame.font.Font(None, 200)
         # text = font.render(f'', True, pygame.Color("red"))

@@ -4,21 +4,36 @@ from functions import *
 from board import *
 
 
-width, height = 1600, 850
-screen = pygame.display.set_mode((width, height))
+WIDTH, HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+FPS = 120
 
 
 class Start_Screen:
     def __init__(self):
         self.display = screen
-        self.weight = width
-        self.height = height
-        self.start_screen = load_image("logo.png")
-        self.pos_start_screen = self.start_screen.get_rect(center=(self.weight // 2, self.height // 2 - 160))
-        self.display.blit(self.start_screen, self.pos_start_screen)
-        self.text_for_start_screen = load_image("text_for_start_screen.png")
-        self.pos_text_for_start_screen = self.text_for_start_screen.get_rect(center=(self.weight // 2 + 10, self.height // 2 + 150))
-        self.display.blit(self.text_for_start_screen, self.pos_text_for_start_screen )
+        self.start_screen = load_image("logo2.png", colorkey=-1)
+        self.pos_start_screen = self.start_screen.get_rect(center=(130, 60))
+        self.game = load_image("findgame.png", colorkey=-1)
+        self.pos_game = self.start_screen.get_rect(center=(WIDTH / 100 * 80, 90))
+        self.login = load_image("login.png", colorkey=-1)
+        self.pos_login = self.start_screen.get_rect(center=(WIDTH / 100 * 95, 88))
+        self.exit = load_image("exit.png")
+        self.pos_exit = self.start_screen.get_rect(center=(WIDTH + 65, 55))
+        running = True
+        # font = pygame.font.Font(None, 200)
+        # text = font.render(f'', True, pygame.Color("red"))
+        # place = text.get_rect(center=(self.weight // 2, self.height // 2 + 135))
+        # screen.blit(text, place)
+        self.display.fill(pygame.Color(214, 210, 210))
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            pygame.display.flip()
+            self.display.fill(pygame.Color(250, 242, 242), pygame.Rect(0, 0, WIDTH, HEIGHT / 100 * 15)), self.display.blit(self.start_screen, self.pos_start_screen), self.display.blit(self.game, self.pos_game), self.display.blit(self.login, self.pos_login), self.display.blit(self.exit, self.pos_exit)
+            clock.tick(FPS)
+
         pygame.display.update()
 
 
@@ -63,14 +78,6 @@ if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("Монополия")
     clock = pygame.time.Clock()
-    running = True
-    sc = Start_Screen()
-    begining = Vibor_igrokov()
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-        pygame.display.flip()
-        clock.tick(60)
+    Start_Screen()
 
     pygame.quit()

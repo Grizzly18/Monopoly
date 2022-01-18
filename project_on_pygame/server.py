@@ -5,8 +5,9 @@ import asyncio
 
 def translate(word):
     new_word = ""
+    print(word)
     for i in word:
-        new_word = f"{i};{'$'.join(word[i])} "
+        new_word += f"{i}#{'$'.join(word[i])}!!!"
     return new_word
 
 class Server(Socket):
@@ -34,10 +35,10 @@ class Server(Socket):
             try:
                 data = await self.main_loop.sock_recv(listened_socket, 2048)
                 if data.decode('utf-8') == "create game":
-                    self.games[f"game-{listened_socket}"] = [listened_socket]
+                    self.games[f"game-{str(listened_socket)}"] = [str(listened_socket)]
                 elif "join game" in data.decode('utf-8'):
                     print(data[2][5:], data[2][4:])
-                    self.games[data[2][5:]].append(listened_socket)
+                    self.games[data[2][5:]].append(str(listened_socket))
                 elif "check listgame" == data.decode('utf-8'):
                     await self.main_loop.sock_sendall(listened_socket, translate(self.games).encode('utf-8'))
                 else:

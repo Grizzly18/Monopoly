@@ -16,24 +16,33 @@ messages, online, NowPage = "", False, "MainPage"
 
 def translate(word):
     if (len(word) <= 0):
-        return
+        return ""
     new_word = {}
-    for i in word.split(" "):
-        t = i.split(';')
+    for i in word.split("!!!"):
+        t = i.split('#')
+        if (t == ['']):
+            continue
         new_word[t[0]] = t[1].split(',')
     return new_word
+
+def Game(y):
+    screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, y, WIDTH * 0.70, y + 60))
 
 class MainPage:
     def __init__(self):
         global messages, client, NowPage
         if online:
             client.send_data("check listgame")
+
         self.all_page_buttons = []
         self.all_page_buttons.append(Button(load_image("create.png", colorkey=-1), (WIDTH * 0.75, HEIGHT * 0.25)))
+        self.all_games = translate(messages)
         text = font.render(f'Ожидают игры', True, pygame.Color("black"))
         place = text.get_rect(center=(WIDTH * 0.3, HEIGHT * 0.25))
-        print(translate(messages))
-        
+        screen.fill(pygame.Color(250, 242, 242), pygame.Rect(0, 0, WIDTH, HEIGHT / 100 * 15))
+        screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, HEIGHT * 0.15, WIDTH * 0.70, HEIGHT))
+        for i in range(1, len(self.all_games) + 1):
+            Game(HEIGHT * 0.15 + (i * 80))
         while NowPage == "MainPage":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -41,8 +50,6 @@ class MainPage:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
             pygame.display.flip()
-            screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, 0, WIDTH * 0.70, HEIGHT))
-            screen.fill(pygame.Color(250, 242, 242), pygame.Rect(0, 0, WIDTH, HEIGHT / 100 * 15))
             screen.blit(text, place)
             all_sprites.draw(screen)
             all_sprites.update()

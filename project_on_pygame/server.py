@@ -5,7 +5,7 @@ import asyncio
 
 def translate(word):
     new_word = ""
-    for i in range(len(word)):
+    for i in word:
         new_word = f"{i};{'$'.join(word[i])} "
     return new_word
 

@@ -1,3 +1,4 @@
+from glob import glob
 from socket import socket
 import pygame
 from win32api import GetSystemMetrics
@@ -11,20 +12,20 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 all_sprites = pygame.sprite.Group()
 functs = {None: None, 0: terminate, 1: None, 2: "Login"}
 FPS = 120
-messages, online = "", False
+messages, online, NowPage = "", False, "MainPage"
 
 def translate(word):
+    if (len(word) <= 0):
+        return
     new_word = {}
-    for i in range(len(word)):
-        new_word = f"{i};{'$'.join(word[i])} "
-    for i in range(len(word.split(" "))):
+    for i in word.split(" "):
         t = i.split(';')
         new_word[t[0]] = t[1].split(',')
     return new_word
 
 class MainPage:
     def __init__(self):
-        global messages, client
+        global messages, client, NowPage
         if online:
             client.send_data("check listgame")
         self.all_page_buttons = []
@@ -32,7 +33,8 @@ class MainPage:
         text = font.render(f'Ожидают игры', True, pygame.Color("black"))
         place = text.get_rect(center=(WIDTH * 0.3, HEIGHT * 0.25))
         print(translate(messages))
-        while True:
+        
+        while NowPage == "MainPage":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -45,6 +47,81 @@ class MainPage:
             all_sprites.draw(screen)
             all_sprites.update()
             clock.tick(FPS)
+
+
+class Login:
+    def __init__(self):
+        self.login = ''
+        self.password = ''
+        self.font = pygame.font.Font(None, 32)
+        self.font1 = pygame.font.Font(None, 48)
+        self.login_rect = pygame.Rect(WIDTH * 0.35 * 1.35, HEIGHT * 0.285, WIDTH * 0.2, HEIGHT * 0.03) #pygame.Rect(650, 200, 140, 32)
+        self.password_rect = pygame.Rect(WIDTH * 0.35 * 1.35, HEIGHT * 0.385, WIDTH * 0.2, HEIGHT * 0.03)# pygame.Rect(650, 300, 140, 32)
+        self.color_active = pygame.Color('lightskyblue3')
+        self.color_passive = pygame.Color('grey')
+        self.color1 =self.color_passive
+        self.color = self.color_passive
+        self.active = False
+        self.active1 = False
+        self.process()
+
+
+    def process(self):
+        global NowPage
+        while NowPage == "Login":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        all_sprites.update(event) 
+                    if self.login_rect.collidepoint(event.pos):
+                        self.active = True
+                    else:
+                        self.active = False
+                    if self.password_rect.collidepoint(event.pos):
+                        self.active1 = True
+                    else:
+                        self.active1 = False
+                if event.type == pygame.KEYDOWN:
+                    if self.active is True and self.active1 == False:
+                        if event.key == pygame.K_BACKSPACE: 
+                            self.login = self.login[:-1]
+                        elif event.key == pygame.K_KP_ENTER:
+                            self.active = False
+                        else:
+                            self.login += event.unicode 
+                    if self.active1 is True and self.active == False:
+                        if event.key == pygame.K_BACKSPACE: 
+                            self.password = self.password[:-1]
+                        else:
+                            self.password += event.unicode 
+
+            if self.active and self.active1 == False:
+                self.color = self.color_active
+            else:
+                self.color = self.color_passive
+
+            if self.active1 and self.active == False:
+                self.color1 = self.color_active
+            else:
+                self.color1 = self.color_passive 
+
+            screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, HEIGHT * 0.15, WIDTH * 0.70, HEIGHT))
+            pygame.draw.rect(screen, self.color, self.login_rect, 2)
+            pygame.draw.rect(screen, self.color1, self.password_rect, 2)
+
+            screen.blit(self.font.render(self.login, True, pygame.Color("black")), (self.login_rect.x + 5, self.login_rect.y + 5))
+            screen.blit(self.font.render(self.password, True, pygame.Color("black")), (self.password_rect.x + 5, self.password_rect.y + 5))
+            screen.blit(self.font.render("Логин:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.287))
+            screen.blit(self.font.render("Пароль:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.387))
+            screen.blit(self.font1.render("Авторизация", False, pygame.Color("black")), (WIDTH * 0.35 * 1.2, HEIGHT * 0.2))
+    
+            self.login_rect.w = max(WIDTH * 0.09, self.font.render(self.login, True, pygame.Color("black")).get_width() + 10)
+            self.password_rect.w = max(WIDTH * 0.09, self.font.render(self.password, True, pygame.Color("black")).get_width() + 10)
+
+            pygame.display.flip()
+
 
 class MAIN:
     def __init__(self):
@@ -68,15 +145,15 @@ class Button(pygame.sprite.Sprite):
         self.command = command
 
     def update(self, *args):
+        global NowPage
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
                 if functs[self.command] != None:
                     if self.command == 2:
-                        # Pages = {"Login": Login, "MainPage": MainPage}
-                        # Pages[functs[self.command]]()
-                        pass
+                        Pages = {"Login": Login, "MainPage": MainPage}
+                        NowPage = functs[self.command]
+                        Pages[functs[self.command]]()
                     else:
-                        print(self.command)
                         functs[self.command]()
 
 

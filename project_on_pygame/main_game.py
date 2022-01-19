@@ -1,3 +1,4 @@
+from cmath import log
 from glob import glob
 from socket import socket
 import pygame
@@ -102,12 +103,14 @@ class MainPage:
             i.kill()
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
-        all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
+        if (login == ""):
+            all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
+        else:
+            all_objs.append(Button(load_image("logout.png", colorkey=-1), (WIDTH / 100 * 93, 63), 4))
         if online:
             client.send_data("check listgame")
+            all_objs.append(Button(load_image("create.png", colorkey=-1), (WIDTH * 0.75, HEIGHT * 0.25), 5))
             time.sleep(0.5)
-
-        all_objs.append(Button(load_image("create.png", colorkey=-1), (WIDTH * 0.75, HEIGHT * 0.25)))
         self.all_games = translate(messages)
         text = font.render(f'Ожидают игры', True, pygame.Color("black"))
         place = text.get_rect(center=(WIDTH * 0.3, HEIGHT * 0.25))
@@ -120,6 +123,9 @@ class MainPage:
             for x in self.all_games:
                 Game(HEIGHT * 0.12 + (i * 170), x, self.all_games[x])
                 i += 1
+        elif not online:
+            text2 = font.render(f'Вы оффлайн', True, pygame.Color("black"))
+            place2 = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         else:
             text2 = font.render(f'Игр пока что нет', True, pygame.Color("black"))
             place2 = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
@@ -138,13 +144,16 @@ class MainPage:
 
 class Login:
     def __init__(self):
-        self.login = ''
+        global login
         self.password = ''
         for i in all_objs:
             i.kill()
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
-        all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
+        if (login == ""):
+            all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
+        else:
+            all_objs.append(Button(load_image("logout.png", colorkey=-1), (WIDTH / 100 * 93, 63), 4))
         all_objs.append( Button(load_image("login.png", colorkey=-1), (WIDTH * 0.5, HEIGHT * 0.5), "LoginAc"))
         self.font = pygame.font.Font(None, 32)
         self.font1 = pygame.font.Font(None, 48)
@@ -160,7 +169,7 @@ class Login:
 
 
     def process(self):
-        global NowPage
+        global NowPage, login
         while NowPage == "Login":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -179,11 +188,11 @@ class Login:
                 if event.type == pygame.KEYDOWN:
                     if self.active is True and self.active1 == False:
                         if event.key == pygame.K_BACKSPACE: 
-                            self.login = self.login[:-1]
+                            login = login[:-1]
                         elif event.key == pygame.K_KP_ENTER:
                             self.active = False
                         else:
-                            self.login += event.unicode 
+                            login += event.unicode 
                     if self.active1 is True and self.active == False:
                         if event.key == pygame.K_BACKSPACE: 
                             self.password = self.password[:-1]
@@ -204,12 +213,12 @@ class Login:
             pygame.draw.rect(screen, self.color, self.login_rect, 2)
             pygame.draw.rect(screen, self.color1, self.password_rect, 2)
 
-            screen.blit(self.font.render(self.login, True, pygame.Color("black")), (self.login_rect.x + 5, self.login_rect.y + 5))
+            screen.blit(self.font.render(login, True, pygame.Color("black")), (self.login_rect.x + 5, self.login_rect.y + 5))
             screen.blit(self.font.render(self.password, True, pygame.Color("black")), (self.password_rect.x + 5, self.password_rect.y + 5))
             screen.blit(self.font.render("Логин:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.287))
             screen.blit(self.font.render("Пароль:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.387))
             screen.blit(self.font1.render("Авторизация", False, pygame.Color("black")), (WIDTH * 0.35 * 1.2, HEIGHT * 0.2))
-            self.login_rect.w = max(WIDTH * 0.09, self.font.render(self.login, True, pygame.Color("black")).get_width() + 10)
+            self.login_rect.w = max(WIDTH * 0.09, self.font.render(login, True, pygame.Color("black")).get_width() + 10)
             self.password_rect.w = max(WIDTH * 0.09, self.font.render(self.password, True, pygame.Color("black")).get_width() + 10)
             all_sprites.draw(screen)
             all_sprites.update()
@@ -264,11 +273,20 @@ class Button(pygame.sprite.Sprite):
         global NowPage
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
+                if self.command == 5 and online:
+                    client.send_data("create game")
+                    NowPage = ""
+                    NowPage = "MainPage"
+                    MainPage()
                 if self.command != None and "game" in str(self.command):
+                    client.send_data("join game")
                     Board()
                 if self.command != None and str(self.command) == "LoginAc":
-                    client.send_data("check listgame")
+                    NowPage = "MainPage"
+                    MainPage()
                 elif self.command in functs and functs[self.command] != None:
+                    if self.command == 4:
+                        login = ""
                     if 1 <= self.command <= 2:
                         Pages = {"Login": Login, "MainPage": MainPage}
                         NowPage = functs[self.command]

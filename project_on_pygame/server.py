@@ -1,7 +1,7 @@
 from markupsafe import re
+from sqlalchemy import false, true
 from Socket import Socket
 import asyncio
-import json
 
 
 def translate(word):
@@ -16,8 +16,6 @@ class Server(Socket):
         super(Server, self).__init__()
         self.games = {}
         self.users = []
-        self.PasAndLog = {}
-
     def set_up(self):
         self.socket.bind(("127.0.0.1", 1234))
 
@@ -39,19 +37,10 @@ class Server(Socket):
                 if data.decode('utf-8') == "create game":
                     self.games[f"game-{str(listened_socket)}"] = [str(listened_socket)]
                 elif "join game" in data.decode('utf-8'):
-                    print(data[2][5:], data[2][4:])
-                    self.games[data[2][5:]].append(str(listened_socket))
+                    print(data.split(" ")[2][5:], data.split(" ")[2][4:])
+                    self.games[data.split(" ")[2][5:]].append(str(listened_socket))
                 elif "check listgame" == data.decode('utf-8'):
                     await self.main_loop.sock_sendall(listened_socket, translate(self.games).encode('utf-8'))
-                elif "reg" in data.decode('utf-8'):
-                    temp = data.decode('utf-8').split('-')
-                    self.PasAndLog[temp[1]] = [temp[2], listened_socket]
-                elif "login" in data.decode('utf-8'):
-                    temp = data.decode('utf-8').split('-')
-                    if (temp[1] in self.PasAndLog and self.PasAndLog[temp[1]] == temp[2]):
-                        await self.main_loop.sock_sendall(listened_socket, "Good".encode('utf-8'))
-                    else:
-                        await self.main_loop.sock_sendall(listened_socket, "Bad".encode('utf-8'))
                 else:
                     await self.send_data(data)
                 print(self.games)
@@ -59,6 +48,14 @@ class Server(Socket):
             except ConnectionResetError:
                 print("Client removed")
                 self.users.remove(listened_socket)
+                for i in self.games:
+                    ok = False
+                    for j in self.games[i]:
+                        if j in self.users:
+                            ok = True
+                            break
+                    if not ok:
+                        del self.games[i]
                 return
 
     async def accept_sockets(self):

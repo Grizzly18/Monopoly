@@ -5,14 +5,16 @@ from win32api import GetSystemMetrics
 from functions import *
 from Socket import Socket
 import asyncio
+import time
 from threading import Thread
+from PIL import Image, ImageSequence
 
 WIDTH, HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 all_sprites = pygame.sprite.Group()
 functs = {None: None, 0: terminate, 1: "MainPage", 2: "Login"}
 FPS = 120
-messages, online, NowPage = "", False, "MainPage"
+messages, online, NowPage = "", False, ""
 
 def translate(word):
     if (len(word) <= 0):
@@ -25,14 +27,33 @@ def translate(word):
         new_word[t[0]] = t[1].split(',')
     return new_word
 
+
+def pilImageToSurface(pilImage):
+    mode, size, data = pilImage.mode, pilImage.size, pilImage.tobytes()
+    return pygame.image.fromstring(data, size, mode).convert_alpha()
+
+def loadGIF(filename):
+    pilImage = Image.open(filename)
+    frames = []
+    if pilImage.format == 'GIF' and pilImage.is_animated:
+        for frame in ImageSequence.Iterator(pilImage):
+            pygameImage = pilImageToSurface(frame.convert('RGBA'))
+            frames.append(pygameImage)
+    else:
+        frames.append(pilImageToSurface(pilImage))
+    return frames
+
+
 def Game(y):
     screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, y, WIDTH * 0.70, y + 60))
+
 
 class MainPage:
     def __init__(self):
         global messages, client, NowPage
         if online:
             client.send_data("check listgame")
+            time.sleep(0.5)
 
         self.all_page_buttons = []
         self.all_page_buttons.append(Button(load_image("create.png", colorkey=-1), (WIDTH * 0.75, HEIGHT * 0.25)))
@@ -41,8 +62,15 @@ class MainPage:
         place = text.get_rect(center=(WIDTH * 0.3, HEIGHT * 0.25))
         screen.fill(pygame.Color(250, 242, 242), pygame.Rect(0, 0, WIDTH, HEIGHT / 100 * 15))
         screen.fill(pygame.Color(247, 235, 235), pygame.Rect(WIDTH * 0.15, HEIGHT * 0.15, WIDTH * 0.70, HEIGHT))
-        for i in range(1, len(self.all_games) + 1):
-            Game(HEIGHT * 0.15 + (i * 80))
+        if (len(self.all_games) > 0):
+            text2 = font.render(f'', True, pygame.Color("black"))
+            place2 = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            for i in range(1, len(self.all_games) + 1):
+                print(1)
+                Game(HEIGHT * 0.15 + (i * 80))
+        else:
+            text2 = font.render(f'Игр пока что нет', True, pygame.Color("black"))
+            place2 = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         while NowPage == "MainPage":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -50,7 +78,7 @@ class MainPage:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
             pygame.display.flip()
-            screen.blit(text, place)
+            screen.blit(text, place), screen.blit(text2, place2)
             all_sprites.draw(screen)
             all_sprites.update()
             clock.tick(FPS)
@@ -132,10 +160,11 @@ class Login:
 
 class MAIN:
     def __init__(self):
-        global online
+        global online, NowPage
         if client.set_up() is None:
             online = True
             Thread(target=client.start, daemon=True).start()
+        NowPage = "MainPage"
         Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5))
         Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1)
         Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2)
@@ -163,6 +192,17 @@ class Button(pygame.sprite.Sprite):
                     else:
                         functs[self.command]()
 
+
+def load():
+    gifFrameList = loadGIF("data/load.gif")
+    currentFrame = 0
+    while NowPage == "":
+        clock.tick(4)
+        if NowPage == "":
+            rect = gifFrameList[currentFrame].get_rect(center = (WIDTH // 2, HEIGHT // 2))
+            screen.blit(gifFrameList[currentFrame], rect)
+            currentFrame = (currentFrame + 1) % len(gifFrameList)
+            pygame.display.flip()
 
 class Client(Socket):
     def __init__(self):
@@ -196,6 +236,7 @@ if __name__ == "__main__":
     pygame.init()
     pygame.display.set_caption("Монополия")
     clock = pygame.time.Clock()
+    Thread(target=load, daemon=True).start()
     client = Client()
     font = pygame.font.Font(None, 60)
     MAIN()

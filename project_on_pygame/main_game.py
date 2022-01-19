@@ -16,7 +16,7 @@ all_sprites = pygame.sprite.Group()
 all_objs = []
 functs = {None: None, 0: terminate, 1: "MainPage", 2: "Login"}
 FPS = 120
-messages, online, NowPage = "", False, ""
+messages, online, NowPage, login = "", False, "", ""
 
 
 def crop(im, s):
@@ -97,6 +97,9 @@ def Game(y, game, players):
 class MainPage:
     def __init__(self):
         global messages, client, NowPage
+        NowPage = "MainPage"
+        for i in all_objs:
+            i.kill()
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
         all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
@@ -137,8 +140,12 @@ class Login:
     def __init__(self):
         self.login = ''
         self.password = ''
+        for i in all_objs:
+            i.kill()
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
+        all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
         all_objs.append(Button(load_image("login.png", colorkey=-1), (WIDTH / 100 * 93, 63), 2))
+        all_objs.append( Button(load_image("login.png", colorkey=-1), (WIDTH * 0.5, HEIGHT * 0.5), "LoginAc"))
         self.font = pygame.font.Font(None, 32)
         self.font1 = pygame.font.Font(None, 48)
         self.login_rect = pygame.Rect(WIDTH * 0.35 * 1.35, HEIGHT * 0.285, WIDTH * 0.2, HEIGHT * 0.03) #pygame.Rect(650, 200, 140, 32)
@@ -202,10 +209,10 @@ class Login:
             screen.blit(self.font.render("Логин:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.287))
             screen.blit(self.font.render("Пароль:", False, pygame.Color("black")), (WIDTH * 0.35 * 1.15, HEIGHT * 0.387))
             screen.blit(self.font1.render("Авторизация", False, pygame.Color("black")), (WIDTH * 0.35 * 1.2, HEIGHT * 0.2))
-    
             self.login_rect.w = max(WIDTH * 0.09, self.font.render(self.login, True, pygame.Color("black")).get_width() + 10)
             self.password_rect.w = max(WIDTH * 0.09, self.font.render(self.password, True, pygame.Color("black")).get_width() + 10)
-
+            all_sprites.draw(screen)
+            all_sprites.update()
             pygame.display.flip()
 
 
@@ -215,7 +222,7 @@ class Board:
         NowPage = "Game"
         resize_img("data/board.png", int(HEIGHT * 0.9), int(HEIGHT * 0.9))
         self.board = load_image('board2.png', colorkey=-1)
-        self.pos_board = self.board.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        self.pos_board = self.board.get_rect(center=(WIDTH * 0.70, HEIGHT // 2))
         for i in all_objs:
             i.kill()
         screen.fill(pygame.Color(33, 40, 43))
@@ -235,7 +242,6 @@ class Board:
 class MAIN:
     def __init__(self):
         global online, NowPage
-        NowPage = "MainPage"
         if client.set_up() is None:
             online = True
             Thread(target=client.start, daemon=True).start()
@@ -260,6 +266,8 @@ class Button(pygame.sprite.Sprite):
             if self.rect.collidepoint(args[0].pos):
                 if self.command != None and "game" in str(self.command):
                     Board()
+                if self.command != None and str(self.command) == "LoginAc":
+                    client.send_data("check listgame")
                 elif self.command in functs and functs[self.command] != None:
                     if 1 <= self.command <= 2:
                         Pages = {"Login": Login, "MainPage": MainPage}
@@ -270,6 +278,7 @@ class Button(pygame.sprite.Sprite):
 
 
 def load():
+    global NowPage
     gifFrameList = loadGIF("data/load.gif")
     currentFrame = 0
     while NowPage == "":

@@ -1,6 +1,7 @@
 from markupsafe import re
 from Socket import Socket
 import asyncio
+import json
 
 
 def translate(word):
@@ -15,6 +16,7 @@ class Server(Socket):
         super(Server, self).__init__()
         self.games = {}
         self.users = []
+        self.PasAndLog = {}
 
     def set_up(self):
         self.socket.bind(("127.0.0.1", 1234))
@@ -41,6 +43,15 @@ class Server(Socket):
                     self.games[data[2][5:]].append(str(listened_socket))
                 elif "check listgame" == data.decode('utf-8'):
                     await self.main_loop.sock_sendall(listened_socket, translate(self.games).encode('utf-8'))
+                elif "reg" in data.decode('utf-8'):
+                    temp = data.decode('utf-8').split('-')
+                    self.PasAndLog[temp[1]] = [temp[2], listened_socket]
+                elif "login" in data.decode('utf-8'):
+                    temp = data.decode('utf-8').split('-')
+                    if (temp[1] in self.PasAndLog and self.PasAndLog[temp[1]] == temp[2]):
+                        await self.main_loop.sock_sendall(listened_socket, "Good".encode('utf-8'))
+                    else:
+                        await self.main_loop.sock_sendall(listened_socket, "Bad".encode('utf-8'))
                 else:
                     await self.send_data(data)
                 print(self.games)

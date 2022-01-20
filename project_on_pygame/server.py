@@ -35,7 +35,6 @@ class Server(Socket):
         while True:
             try:
                 data = await self.main_loop.sock_recv(listened_socket, 2048)
-                print(self.games)
                 if data.decode('utf-8') == "create game":
                     self.games[f"game-{str(listened_socket)}"] = [str(listened_socket)]
                     await self.main_loop.sock_sendall(listened_socket, f"game-{str(listened_socket)}".encode('utf-8'))
@@ -46,21 +45,25 @@ class Server(Socket):
                 elif "check listgame" == data.decode('utf-8'):
                     await self.main_loop.sock_sendall(listened_socket, f"{translate(self.games)}&{translate(self.Logs)}".encode('utf-8'))
                 elif "LOGIN" in data.decode('utf-8'):
-                    self.Logs[listened_socket] = data.decode('utf-8').split(" ")[1]
+                    self.Logs[str(listened_socket)] = data.decode('utf-8').split(" ")[1]
                 elif "ExitGame" in data.decode('utf-8'):
-                    self.games[data.decode('utf-8').split("#")[1]].remove(listened_socket)
+                    self.games[data.decode('utf-8').split("#")[1]].remove(str(listened_socket))
+                    if len(self.games[data.decode('utf-8').split("#")[1]]) < 1:
+                        del self.games[data.decode('utf-8').split("#")[1]]
                 elif "START" in data.decode('utf-8'):
                     game = data.decode('utf-8').split("#")[1]
-                    print(self.games[game])
 
             except ConnectionResetError:
                 print("Client removed")
                 self.users.remove(listened_socket)
                 try:
-                    del self.Logs[listened_socket]
+                    del self.Logs[str(listened_socket)]
+                    self.temp = []
+                    for t in self.users:
+                        self.temp.append(str(t))
                     for i in self.games:
                         for j in self.games[i]:
-                            if j not in self.users:
+                            if j not in self.temp:
                                 self.games[i].remove(j)
                         if len(self.games[i]) < 1:
                             del self.games[i]

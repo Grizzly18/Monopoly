@@ -259,6 +259,12 @@ class Piece(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=pos)
         self.command = command
 
+    def update(self):
+        if (self.rect.x < WIDTH * 0.75):
+            self.rect = self.rect.move(WIDTH * 0.03755, 0)
+        elif (self.rect.y < HEIGHT * 0.75):
+            self.rect = self.rect.move(0, HEIGHT * 0.06)
+
 
 class Board:
     def __init__(self, g, main=False):
@@ -282,21 +288,18 @@ class Board:
         for i in range(len(self.players)):
             try:
                 all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
-                all_objs.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.38 + (i * 20), HEIGHT * 0.13), self.all_games[g][i]))
+                all_objs.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.15), self.all_games[g][i]))
             except:
                 pass
         if main:
             all_objs.append(Button(load_image("start.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2), f"START#{g}"))
         while NowPage == "Game":
+            clock.tick(3)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
-            pygame.display.flip()
-            all_sprites.draw(screen)
-            all_sprites.update()
-            colors = ["red", "blue", "green", "purple", "orange"]
             for i in range(len(self.players)):
                 try:
                     # all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
@@ -305,7 +308,11 @@ class Board:
                     screen.blit(text2, place2)
                 except:
                     pass
-            clock.tick(FPS)
+            screen.blit(self.board, self.pos_board)
+            all_sprites.draw(screen)
+            all_sprites.update()
+            colors = ["red", "blue", "green", "purple", "orange"]
+            pygame.display.flip()
 
 
 class MAIN:

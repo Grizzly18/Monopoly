@@ -99,7 +99,7 @@ def Game(y, game, p):
         if (i < len(p)):
             all_objs.append(Button(load_image("gray_usernew.png"), (WIDTH * 0.25 + (i * 180), y + 80)))
             text2 = font1.render(f'{players[p[i]]}', True, pygame.Color("black"))
-            place2 = text.get_rect(center=(WIDTH * 0.3 + (i * 180), y + 140))
+            place2 = text2.get_rect(center=(WIDTH * 0.25 + (i * 180), y + 140))
             screen.blit(text2, place2)
         else:
             all_objs.append(Button(load_image("join.png", colorkey=-1), (WIDTH * 0.25 + (i * 180), y + 80), game))
@@ -110,6 +110,7 @@ class MainPage:
         NowPage = "MainPage"
         for i in all_objs:
             i.kill()
+        screen.fill(pygame.Color(214, 210, 210))
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
         if (login == ""):
@@ -241,14 +242,19 @@ class Login:
 
 class BlockPlayer(pygame.sprite.Sprite):
     def __init__(self, pos, player, command=None):
+        global players
         super().__init__(all_sprites)
         self.image = load_image('BlockPlayer.png')
         self.rect = self.image.get_rect(center=pos)
         self.command = command
+        # font1 = pygame.font.Font(None, 24)
+        # text2 = font1.render(f'{players[player]}', True, pygame.Color("red"))
+        # place2 = text2.get_rect(center=pos)
+        # screen.blit(text2, place2)
 
 
 class Board:
-    def __init__(self, g):
+    def __init__(self, g, main=False):
         global NowPage
         NowPage = "Game"
         resize_img("data/board.png", int(HEIGHT * 0.9), int(HEIGHT * 0.9))
@@ -259,13 +265,16 @@ class Board:
         screen.fill(pygame.Color(33, 40, 43))
         screen.blit(self.board, self.pos_board)
         client.send_data("check listgame")
-        all_objs.append(Button(load_image("logout2.png", colorkey=-1), (80, HEIGHT * 0.1), 1))
+        font1 = pygame.font.Font(None, 24)
+        all_objs.append(Button(load_image("logout2.png", colorkey=-1), (80, HEIGHT * 0.05), f"ExitGame#{g}"))
         time.sleep(0.5)
         self.all_games = translate(messages.split("&")[0])
         if '&' in messages:
             self.players = (translate2(messages.split("&")[1]))
         for i in range(len(self.players)):
-            BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g])
+            all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
+        if main:
+            all_objs.append(Button(load_image("start.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2), f"START {g}"))
         while NowPage == "Game":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -275,6 +284,12 @@ class Board:
             pygame.display.flip()
             all_sprites.draw(screen)
             all_sprites.update()
+            colors = ["red", "blue", "green", "purple", "orange"]
+            for i in range(len(self.players)):
+                # all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
+                text2 = font1.render(f'{players[self.all_games[g][i]]}', True, pygame.Color(colors[i]))
+                place2 = text2.get_rect(center=(WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)))
+                screen.blit(text2, place2)
             clock.tick(FPS)
 
 
@@ -306,8 +321,7 @@ class Button(pygame.sprite.Sprite):
                 if self.command == 5 and online:
                     client.send_data("create game")
                     time.sleep(0.5)
-                    print(messages)
-                    Board(messages)
+                    Board(messages, True)
                     # NowPage = ""
                     # NowPage = "MainPage"
                     # MainPage()
@@ -322,10 +336,14 @@ class Button(pygame.sprite.Sprite):
                     # NowPage = ""
                     # NowPage = "MainPage"
                     # MainPage()
+                if self.command != None and "START" in str(self.command):
+                    client.send_data(self.command)
                 if self.command != None and online and str(self.command) == "LoginAc": 
                     NowPage = "MainPage"
                     client.send_data(f"LOGIN {login}")
                     MainPage()
+                if self.command != None and  "ExitGame" in str(self.command):
+                    client.send_data(self.command)
                 elif self.command in functs and functs[self.command] != None:
                     if 1 <= self.command <= 2:
                         Pages = {"Login": Login, "MainPage": MainPage}

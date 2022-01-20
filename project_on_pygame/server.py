@@ -47,6 +47,11 @@ class Server(Socket):
                     await self.main_loop.sock_sendall(listened_socket, f"{translate(self.games)}&{translate(self.Logs)}".encode('utf-8'))
                 elif "LOGIN" in data.decode('utf-8'):
                     self.Logs[listened_socket] = data.decode('utf-8').split(" ")[1]
+                elif "ExitGame" in data.decode('utf-8'):
+                    self.games[data.decode('utf-8').split("#")[1]].remove(listened_socket)
+                elif "START" in data.decode('utf-8'):
+                    game = data.decode('utf-8').split(" ")[1]
+                    print(self.games[game])
 
             except ConnectionResetError:
                 print("Client removed")

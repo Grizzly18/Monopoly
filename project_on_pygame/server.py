@@ -50,7 +50,7 @@ class Server(Socket):
                 elif "ExitGame" in data.decode('utf-8'):
                     self.games[data.decode('utf-8').split("#")[1]].remove(listened_socket)
                 elif "START" in data.decode('utf-8'):
-                    game = data.decode('utf-8').split(" ")[1]
+                    game = data.decode('utf-8').split("#")[1]
                     print(self.games[game])
 
             except ConnectionResetError:

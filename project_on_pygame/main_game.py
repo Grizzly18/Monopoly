@@ -250,10 +250,14 @@ class BlockPlayer(pygame.sprite.Sprite):
         self.image = load_image('BlockPlayer.png')
         self.rect = self.image.get_rect(center=pos)
         self.command = command
-        # font1 = pygame.font.Font(None, 24)
-        # text2 = font1.render(f'{players[player]}', True, pygame.Color("red"))
-        # place2 = text2.get_rect(center=pos)
-        # screen.blit(text2, place2)
+
+
+class Piece(pygame.sprite.Sprite):
+    def __init__(self, image, pos, command=None):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.command = command
 
 
 class Board:
@@ -274,9 +278,11 @@ class Board:
         self.all_games = translate(messages.split("&")[0])
         if '&' in messages:
             self.players = (translate2(messages.split("&")[1]))
+        pieces = ["red_piece.png", "blue_piece.png", "green_piece.png", "purple_piece.png", "orange_piece.png"]
         for i in range(len(self.players)):
             try:
                 all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
+                all_objs.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.38 + (i * 20), HEIGHT * 0.13), self.all_games[g][i]))
             except:
                 pass
         if main:

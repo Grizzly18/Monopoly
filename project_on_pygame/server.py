@@ -16,6 +16,7 @@ class Server(Socket):
         self.games = {}
         self.users = []
         self.Logs = {}
+        self.sock = {}
 
     def set_up(self):
         self.socket.bind(("127.0.0.1", 1234))
@@ -52,10 +53,13 @@ class Server(Socket):
                         del self.games[data.decode('utf-8').split("#")[1]]
                 elif "START" in data.decode('utf-8'):
                     game = data.decode('utf-8').split("#")[1]
+                    for p in self.games[game]:
+                        await self.main_loop.sock_sendall(self.sock[p], f"START GAME".encode('utf-8'))
 
             except ConnectionResetError:
                 print("Client removed")
                 self.users.remove(listened_socket)
+                del self.sock[str(listened_socket)]
                 try:
                     del self.Logs[str(listened_socket)]
                     self.temp = []
@@ -78,6 +82,7 @@ class Server(Socket):
             print(f"User <{address[0]}> connected!")
 
             self.users.append(user_socket)
+            self.sock[str(user_socket)] = user_socket
             self.main_loop.create_task(self.listen_socket(user_socket))
 
     async def main(self):

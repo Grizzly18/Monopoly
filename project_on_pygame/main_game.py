@@ -1,5 +1,3 @@
-from cmath import exp, log
-from glob import glob
 from socket import socket
 import pygame
 from win32api import GetSystemMetrics
@@ -7,6 +5,7 @@ from functions import *
 from Socket import Socket
 import asyncio
 import time
+import random
 from PIL import Image, ImageDraw
 from threading import Thread
 from PIL import Image, ImageSequence
@@ -18,6 +17,7 @@ all_objs = []
 functs = {None: None, 0: terminate, 1: "MainPage", 2: "Login"}
 FPS = 120
 messages, online, NowPage, login, players = "", False, "", "", ""
+PiecPlayers = []
 
 
 def crop(im, s):
@@ -113,6 +113,8 @@ class MainPage:
         NowPage = "MainPage"
         for i in all_objs:
             i.kill()
+        for i in PiecPlayers:
+            i.kill()
         screen.fill(pygame.Color(214, 210, 210))
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
@@ -165,6 +167,8 @@ class Login:
         global login
         self.password = ''
         for i in all_objs:
+            i.kill()
+        for i in PiecPlayers:
             i.kill()
         all_objs.append(Button(load_image("logo.png", colorkey=-1), (WIDTH / 100 * 16, HEIGHT / 100 * 7.5)))
         all_objs.append(Button(load_image("findgame.png", colorkey=-1), (WIDTH / 100 * 80, 65), 1))
@@ -258,25 +262,37 @@ class Piece(pygame.sprite.Sprite):
         self.image = image
         self.rect = self.image.get_rect(center=pos)
         self.command = command
+        self.pos = 0
 
-    def update(self):
-        if (self.rect.x < WIDTH * 0.75):
-            self.rect = self.rect.move(WIDTH * 0.03755, 0)
-        elif (self.rect.y < HEIGHT * 0.75):
-            self.rect = self.rect.move(0, HEIGHT * 0.06)
+    def turn(self, turn):
+        for i in range(turn):
+            if (self.pos > 40):
+                self.pos = 0
+            if (self.pos <= 10):
+                self.rect = self.rect.move(WIDTH * 0.03755, 0)
+                self.pos += 1
+            elif (self.pos <= 20):
+                self.rect = self.rect.move(0, HEIGHT * 0.0665)
+            elif (self.pos <= 30):
+                self.rect = self.rect.move(-(WIDTH * 0.03755), 0)
+            elif (self.pos <= 40):
+                self.rect = self.rect.move(0, -(HEIGHT * 0.0665))
 
 
 class Board:
     def __init__(self, g, main=False):
-        global NowPage
+        global NowPage, messages, PiecPlayers
         NowPage = "Game"
         resize_img("data/board.png", int(HEIGHT * 0.9), int(HEIGHT * 0.9))
         self.board = load_image('board2.png', colorkey=-1)
         self.pos_board = self.board.get_rect(center=(WIDTH * 0.60, HEIGHT // 2))
         for i in all_objs:
             i.kill()
+        for i in PiecPlayers:
+            i.kill()
         screen.fill(pygame.Color(33, 40, 43))
         screen.blit(self.board, self.pos_board)
+        self.turn = messages
         client.send_data("check listgame")
         font1 = pygame.font.Font(None, 24)
         all_objs.append(Button(load_image("logout2.png", colorkey=-1), (80, HEIGHT * 0.05), f"ExitGame#{g}"))
@@ -285,16 +301,43 @@ class Board:
         if '&' in messages:
             self.players = (translate2(messages.split("&")[1]))
         pieces = ["red_piece.png", "blue_piece.png", "green_piece.png", "purple_piece.png", "orange_piece.png"]
+        self.number = 0
+        PiecPlayers = []
         for i in range(len(self.players)):
             try:
                 all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
-                all_objs.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.15), self.all_games[g][i]))
+                PiecPlayers.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.17), self.all_games[g][i]))
+                if (players[self.all_games[g][i]] == login):
+                    self.number = i
             except:
                 pass
         if main:
             all_objs.append(Button(load_image("start.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2), f"START#{g}"))
+        can = True
+        start = True
+        pos = PiecPlayers[self.number].rect
         while NowPage == "Game":
-            clock.tick(3)
+            clock.tick(2)
+            if (PiecPlayers[self.number].rect != pos):
+                pos = PiecPlayers[self.number].rect
+                temp.kill()
+                screen.fill(pygame.Color(33, 40, 43))
+                for i in range(len(self.players)):
+                    try:
+                        all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
+                        PiecPlayers.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.17), self.all_games[g][i]))
+                        if (players[self.all_games[g][i]] == login):
+                            self.number = i
+                    except:
+                        pass
+            if (messages == "START GAME"):
+                NowPage = ""
+                time.sleep(0.5)
+                Board(g, False)
+            if (("TURN" in messages and int(messages.split(" ")[1]) == self.number and self.turn != messages and can) or (start and "TURN" in self.turn and int(self.turn.split(" ")[1]) == self.number)):
+                # PiecPlayers[self.number].turn(random.randint(1, 6) + random.randint(1, 6))
+                start, can = False, False
+                temp = TURN(load_image("turn.png"), (WIDTH // 2, HEIGHT // 2), self.number)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -329,6 +372,19 @@ class MAIN:
         MainPage()
 
 
+class TURN(pygame.sprite.Sprite):
+    def __init__(self, image, pos, number):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.number = number
+
+    def update(self, *args):
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(args[0].pos):
+                PiecPlayers[self.number].turn(random.randint(1, 6) + random.randint(1, 6))
+
+
 class Button(pygame.sprite.Sprite):
     def __init__(self, image, pos, command=None):
         super().__init__(all_sprites)
@@ -357,7 +413,7 @@ class Button(pygame.sprite.Sprite):
                     NowPage = ""
                     NowPage = "MainPage"
                     MainPage()
-                elif self.command != None and "game" in str(self.command):
+                elif self.command != None and "game" in str(self.command) and "START" not in str(self.command):
                     client.send_data(f"join#game#{str(self.command)}")
                     Board(str(self.command))
                     # NowPage = ""

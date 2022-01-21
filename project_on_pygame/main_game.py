@@ -318,6 +318,11 @@ class Board:
         pos = PiecPlayers[self.number].rect
         while NowPage == "Game":
             clock.tick(2)
+            if ("Player" in messages and "turn" in messages):
+                messages = ""
+                can = True
+                p, t = messages.split(" ")[1], messages.split(" ")[3]
+                PiecPlayers[int(p)].turn(int(t))
             if (PiecPlayers[self.number].rect != pos):
                 pos = PiecPlayers[self.number].rect
                 temp.kill()
@@ -364,6 +369,19 @@ class MAIN:
         MainPage()
 
 
+class BUY(pygame.sprite.Sprite):
+    def __init__(self, image, pos, number):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.number = number
+
+    def update(self, *args):
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(args[0].pos):
+                client.send_data(f"Player {self.number} turn {turn}")
+
+
 class TURN(pygame.sprite.Sprite):
     def __init__(self, image, pos, number):
         super().__init__(all_sprites)
@@ -374,7 +392,10 @@ class TURN(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
-                PiecPlayers[self.number].turn(random.randint(1, 6) + random.randint(1, 6))
+                turn = random.randint(1, 6) + random.randint(1, 6)
+                print(turn)
+                PiecPlayers[self.number].turn(turn)
+                client.send_data(f"Player {self.number} turn {turn}")
 
 
 class Button(pygame.sprite.Sprite):

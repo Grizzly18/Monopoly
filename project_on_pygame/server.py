@@ -29,6 +29,7 @@ class Player:
     def __init__(self):
         self.money = 15000
         self.cards = []
+        self.pos = 0
 
 
 
@@ -40,6 +41,7 @@ class Server(Socket):
         self.Logs = {}
         self.sock = {}
         self.turns = {}
+        self.play = {}
 
     def set_up(self):
         self.socket.bind(("127.0.0.1", 1234))
@@ -70,10 +72,24 @@ class Server(Socket):
                             pass
                         if "prison" in data.decode('utf-8'):
                             pass
+                        if ("Player" in data.decode('utf-8') and "turn" in data.decode('utf-8')):
+                            print("YES")
+                            for j in self.games[i]:
+                                if self.sock[j] != listened_socket:
+                                    await self.main_loop.sock_sendall(self.sock[j], data)
+                            p, t = data.decode('utf-8').split(" ")[1], data.decode('utf-8').split(" ")[3]
+                            self.play[game][p].pos += t
+                            if (self.play[game][p].pos > 40):
+                                self.play[game][p].pos -= 40
+                                self.play[game][p].money += 2000
+                            current_card = g[i][self.play[game][p].pos]
+                            if (current_card.com == None and current_card.owner == ''):
+                                await self.main_loop.sock_sendall(listened_socket, f"BUY".encode('utf-8'))
+                            time.sleep(0.5)
 
                         self.turns[i] = len(self.games[i]) % (self.turns[i] + 1)
                         for j in self.games[i]:
-                            await self.main_loop.sock_sendall(self.sock[p], f"TURN {self.turns[i]}".encode('utf-8'))
+                            await self.main_loop.sock_sendall(self.sock[j], f"TURN {self.turns[i]}".encode('utf-8'))
 
                 # НЕ В ИГРЕ
                 print(data.decode('utf-8'))
@@ -101,7 +117,9 @@ class Server(Socket):
                                Card(2400, 1200, 900), Card(2000, 1000, 700), Card(2600, 1300, 1000), Card(2600, 1300, 1000), Card(1500, 750, 400), Card(2800, 1400, 1100), Card(-1, -1, -1, com='police'),
                                Card(3000, 1500, 1200), Card(3000, 1500, 1200), Card(-1, -1, -1, com="chance"), Card(3200, 1600, 1300), Card(2000, 1000, 700), Card(-1, -1, -1, com="diamond"),
                                Card(3500, 1750, 1400), Card(-1, -1, -1, com="chance"), Card(4000, 2000, 1600)]
+                    self.play[game] = []
                     for p in self.games[game]:
+                        self.play[game].append(Player())
                         await self.main_loop.sock_sendall(self.sock[p], f"START GAME".encode('utf-8'))
                     time.sleep(0.5)
                     for p in self.games[game]:

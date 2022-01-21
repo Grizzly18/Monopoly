@@ -322,14 +322,6 @@ class Board:
                 pos = PiecPlayers[self.number].rect
                 temp.kill()
                 screen.fill(pygame.Color(33, 40, 43))
-                for i in range(len(self.players)):
-                    try:
-                        all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
-                        PiecPlayers.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.17), self.all_games[g][i]))
-                        if (players[self.all_games[g][i]] == login):
-                            self.number = i
-                    except:
-                        pass
             if (messages == "START GAME"):
                 NowPage = ""
                 time.sleep(0.5)

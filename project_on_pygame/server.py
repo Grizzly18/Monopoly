@@ -81,7 +81,6 @@ class Server(Socket):
                             if "prison" in data.decode('utf-8'):
                                 pass
                             if ("Player" in data.decode('utf-8') and "turn" in data.decode('utf-8')):
-                                print("YES")
                                 for j in self.games[i]:
                                     await self.main_loop.sock_sendall(self.sock[j], data)
                                 time.sleep(0.5)
@@ -102,21 +101,24 @@ class Server(Socket):
                                     self.play[i][p].money += random.randint(-500, 500)
                                 time.sleep(0.5)
 
-                            self.turns[i] = len(self.games[i]) % (self.turns[i] + 1)
-                            for j in self.games[i]:
-                                await self.main_loop.sock_sendall(self.sock[j], f"TURN {self.turns[i]}".encode('utf-8'))
-
                 # НЕ В ИГРЕ
-                print(data.decode('utf-8'))
+                # print(data.decode('utf-8'))
                 if "check money" in data.decode('utf-8'):
                     p = int(data.decode('utf-8').split(" ")[2])
+                    self.turns[i] += 1
+                    print(self.turns[i], len(self.games[i]))
+                    if (self.turns[i] >= len(self.games[i])):
+                        self.turns[i] -= len(self.games[i])
                     await self.main_loop.sock_sendall(listened_socket, f"Player {str(p)} have {str(self.play[i][p].money)}".encode('utf-8'))
+                    time.sleep(0.5)
+                    await self.main_loop.sock_sendall(listened_socket, f"TURN {self.turns[i]}".encode('utf-8'))
                 if data.decode('utf-8') == "create game":
                     self.games[f"game-{str(listened_socket)}"] = [str(listened_socket)]
                     await self.main_loop.sock_sendall(listened_socket, f"game-{str(listened_socket)}".encode('utf-8'))
                 elif "join#game" in data.decode('utf-8'):
                     t = data.decode('utf-8')
                     self.games[t.split("#")[2]].append(str(listened_socket))
+                    await self.main_loop.sock_sendall(self.sock[t.split("#")[2][5:]], f"UPDATE".encode('utf-8'))
                 elif "check listgame" == data.decode('utf-8'):
                     await self.main_loop.sock_sendall(listened_socket, f"{translate(self.games)}&{translate(self.Logs)}".encode('utf-8'))
                 elif "LOGIN" in data.decode('utf-8'):

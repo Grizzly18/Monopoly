@@ -312,6 +312,7 @@ class Board:
         pieces = ["red_piece.png", "blue_piece.png", "green_piece.png", "purple_piece.png", "orange_piece.png"]
         self.number = 0
         PiecPlayers = []
+        print(self.players)
         for i in range(len(self.players)):
             try:
                 all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
@@ -328,7 +329,7 @@ class Board:
         money = [15000] * len(PiecPlayers)
         while NowPage == "Game":
             clock.tick(2)
-            # print(messages)
+            print(messages)
             if ("Player" in messages and "turn" in messages):
                 p, t = messages.split(" ")[1], messages.split(" ")[3]
                 PiecPlayers[int(p)].turn(int(t))
@@ -342,25 +343,32 @@ class Board:
                 screen.fill(pygame.Color(33, 40, 43))
             if (messages == "BUY"):
                 temp = BUY(load_image("buy.png"), (WIDTH // 2, HEIGHT // 2), self.number)
+                all_objs.append(temp)
             if ("Player" in messages and "buy" in messages):
                 p = int(messages.split(" ")[1])
                 if p == self.number:
                     temp.kill()
                     screen.fill(pygame.Color(33, 40, 43))
                 client.send_data(f"check money {p}")
-                TempPiece(load_image(pieces[p], colorkey=-1), (PiecPlayers[p].rect.x, PiecPlayers[p].rect.y + 20))
+                messages = ""
+                all_objs.append(TempPiece(load_image(pieces[p], colorkey=-1), (PiecPlayers[p].rect.x + 15, PiecPlayers[p].rect.y)))
             if ("Player" in messages and "have" in messages):
-                print(messages)
                 p, m = int(messages.split(" ")[1]), int(messages.split(" ")[3])
                 money[p] = m
+                messages = ""
             if (messages == "START GAME"):
                 NowPage = ""
                 time.sleep(0.5)
                 Board(g, False)
+            if (messages == "UPDATE"):
+                NowPage = ""
+                time.sleep(0.5)
+                Board(g, True)
             if (("TURN" in messages and int(messages.split(" ")[1]) == self.number and self.turn != messages and can) or (start and "TURN" in self.turn and int(self.turn.split(" ")[1]) == self.number)):
                 # PiecPlayers[self.number].turn(random.randint(1, 6) + random.randint(1, 6))
                 start, can = False, False
                 temp = TURN(load_image("turn.png"), (WIDTH // 2, HEIGHT // 2), self.number)
+                all_objs.append(temp)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
@@ -372,7 +380,7 @@ class Board:
             jj = 0
             for i in range(len(self.players)):
                 try:
-                    text2 = font1.render(f'{players[self.all_games[g][i]]}', True, pygame.Color(colors[i]))
+                    text2 = font1.render(f'{self.players[self.all_games[g][i]]}', True, pygame.Color(colors[i]))
                     place2 = text2.get_rect(center=(WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)))
                     screen.blit(text2, place2)
                     text3 = font1.render(f'{money[jj]}$', True, pygame.Color("white"))

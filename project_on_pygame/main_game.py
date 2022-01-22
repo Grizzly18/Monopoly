@@ -265,6 +265,15 @@ class TempPiece(pygame.sprite.Sprite):
         self.pos = 0
 
 
+class LOSEORWIN(pygame.sprite.Sprite):
+    def __init__(self, image, pos, command=None):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.command = command
+        self.pos = 0
+
+
 class Piece(pygame.sprite.Sprite):
     def __init__(self, image, pos, command=None):
         super().__init__(all_sprites)
@@ -275,11 +284,11 @@ class Piece(pygame.sprite.Sprite):
 
     def turn(self, turn):
         for i in range(turn):
+            self.pos += 1
             if (self.pos > 40):
-                self.pos = 0
+                self.pos -= 40
             if (self.pos <= 10):
                 self.rect = self.rect.move(WIDTH * 0.03755, 0)
-                self.pos += 1
             elif (self.pos <= 20):
                 self.rect = self.rect.move(0, HEIGHT * 0.0665)
             elif (self.pos <= 30):
@@ -310,20 +319,19 @@ class Board:
         if '&' in messages:
             self.players = (translate2(messages.split("&")[1]))
         pieces = ["red_piece.png", "blue_piece.png", "green_piece.png", "purple_piece.png", "orange_piece.png"]
+        locks = ["red_lock.png", "blue_lock.png", "green_lock.png", "purple_lock.png", "orange_lock.png"]
         self.number = 0
         PiecPlayers = []
-        print(self.players)
         for i in range(len(self.players)):
             try:
                 all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
-                PiecPlayers.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.17), self.all_games[g][i]))
+                PiecPlayers.append(Piece(load_image(pieces[i], colorkey=-1), (WIDTH * 0.415, HEIGHT * 0.17 - (i * 5)), self.all_games[g][i]))
                 if (players[self.all_games[g][i]] == login):
                     self.number = i
             except:
                 pass
         if main:
             all_objs.append(Button(load_image("start.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2), f"START#{g}"))
-        can = True
         start = True
         pos = PiecPlayers[self.number].rect
         money = [15000] * len(PiecPlayers)
@@ -336,7 +344,6 @@ class Board:
                 if ("Player" in messages and "turn" in messages):
                     messages = ""
                 client.send_data(f"check money {p}")
-                can = True
             if (PiecPlayers[self.number].rect != pos):
                 pos = PiecPlayers[self.number].rect
                 temp.kill()
@@ -351,22 +358,30 @@ class Board:
                     screen.fill(pygame.Color(33, 40, 43))
                 client.send_data(f"check money {p}")
                 messages = ""
-                all_objs.append(TempPiece(load_image(pieces[p], colorkey=-1), (PiecPlayers[p].rect.x + 15, PiecPlayers[p].rect.y)))
+                all_objs.append(TempPiece(load_image(locks[p], colorkey=-1), (PiecPlayers[p].rect.x + 15, PiecPlayers[p].rect.y + 15)))
             if ("Player" in messages and "have" in messages):
                 p, m = int(messages.split(" ")[1]), int(messages.split(" ")[3])
                 money[p] = m
-                messages = ""
+                if ("Player" in messages and "have" in messages):
+                    messages = ""
             if (messages == "START GAME"):
                 NowPage = ""
                 time.sleep(0.5)
                 Board(g, False)
+            if (messages == "YOU LOSE"):
+                client.send_data(f"ExitGame#{g}")
+                all_objs.append(LOSEORWIN(load_image("Lose.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2)))
+            if (messages == "YOU WIN"):
+                all_objs.append(LOSEORWIN(load_image("WIN.png", colorkey=-1), (WIDTH // 2, HEIGHT // 2)))
             if (messages == "UPDATE"):
                 NowPage = ""
                 time.sleep(0.5)
                 Board(g, True)
-            if (("TURN" in messages and int(messages.split(" ")[1]) == self.number and self.turn != messages and can) or (start and "TURN" in self.turn and int(self.turn.split(" ")[1]) == self.number)):
+            if (("TURN" in messages and int(messages.split(" ")[1]) == self.number) or (start and "TURN" in self.turn and int(self.turn.split(" ")[1]) == self.number)):
                 # PiecPlayers[self.number].turn(random.randint(1, 6) + random.randint(1, 6))
-                start, can = False, False
+                if ("TURN" in messages and int(messages.split(" ")[1]) == self.number):
+                    messages = ""
+                start = False
                 temp = TURN(load_image("turn.png"), (WIDTH // 2, HEIGHT // 2), self.number)
                 all_objs.append(temp)
             for event in pygame.event.get():
@@ -442,8 +457,8 @@ class TURN(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
-                # turn = random.randint(1, 6) + random.randint(1, 6)
-                turn = 3
+                turn = random.randint(1, 6) + random.randint(1, 6)
+                # turn = 1
                 # PiecPlayers[self.number].turn(turn)
                 client.send_data(f"Player {self.number} turn {turn}")
 

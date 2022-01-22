@@ -256,6 +256,15 @@ class BlockPlayer(pygame.sprite.Sprite):
         self.command = command
 
 
+class TempPiece(pygame.sprite.Sprite):
+    def __init__(self, image, pos, command=None):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.command = command
+        self.pos = 0
+
+
 class Piece(pygame.sprite.Sprite):
     def __init__(self, image, pos, command=None):
         super().__init__(all_sprites)
@@ -294,7 +303,7 @@ class Board:
         screen.blit(self.board, self.pos_board)
         self.turn = messages
         client.send_data("check listgame")
-        font1 = pygame.font.Font(None, 24)
+        font1 = pygame.font.Font(None, 32)
         all_objs.append(Button(load_image("logout2.png", colorkey=-1), (80, HEIGHT * 0.05), f"ExitGame#{g}"))
         time.sleep(0.5)
         self.all_games = translate(messages.split("&")[0])
@@ -316,17 +325,34 @@ class Board:
         can = True
         start = True
         pos = PiecPlayers[self.number].rect
+        money = [15000] * len(PiecPlayers)
         while NowPage == "Game":
             clock.tick(2)
+            # print(messages)
             if ("Player" in messages and "turn" in messages):
-                messages = ""
-                can = True
                 p, t = messages.split(" ")[1], messages.split(" ")[3]
                 PiecPlayers[int(p)].turn(int(t))
+                if ("Player" in messages and "turn" in messages):
+                    messages = ""
+                client.send_data(f"check money {p}")
+                can = True
             if (PiecPlayers[self.number].rect != pos):
                 pos = PiecPlayers[self.number].rect
                 temp.kill()
                 screen.fill(pygame.Color(33, 40, 43))
+            if (messages == "BUY"):
+                temp = BUY(load_image("buy.png"), (WIDTH // 2, HEIGHT // 2), self.number)
+            if ("Player" in messages and "buy" in messages):
+                p = int(messages.split(" ")[1])
+                if p == self.number:
+                    temp.kill()
+                    screen.fill(pygame.Color(33, 40, 43))
+                client.send_data(f"check money {p}")
+                TempPiece(load_image(pieces[p], colorkey=-1), (PiecPlayers[p].rect.x, PiecPlayers[p].rect.y + 20))
+            if ("Player" in messages and "have" in messages):
+                print(messages)
+                p, m = int(messages.split(" ")[1]), int(messages.split(" ")[3])
+                money[p] = m
             if (messages == "START GAME"):
                 NowPage = ""
                 time.sleep(0.5)
@@ -340,17 +366,21 @@ class Board:
                     terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
-            for i in range(len(self.players)):
-                try:
-                    # all_objs.append(BlockPlayer((WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)), self.all_games[g][i]))
-                    text2 = font1.render(f'{players[self.all_games[g][i]]}', True, pygame.Color(colors[i]))
-                    place2 = text2.get_rect(center=(WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)))
-                    screen.blit(text2, place2)
-                except:
-                    pass
             screen.blit(self.board, self.pos_board)
             all_sprites.draw(screen)
             all_sprites.update()
+            jj = 0
+            for i in range(len(self.players)):
+                try:
+                    text2 = font1.render(f'{players[self.all_games[g][i]]}', True, pygame.Color(colors[i]))
+                    place2 = text2.get_rect(center=(WIDTH * 0.20, HEIGHT * 0.15 + (i * 180)))
+                    screen.blit(text2, place2)
+                    text3 = font1.render(f'{money[jj]}$', True, pygame.Color("white"))
+                    place3 = text3.get_rect(center=(WIDTH * 0.20, HEIGHT * 0.20 + (i * 180)))
+                    screen.blit(text3, place3)
+                    jj += 1
+                except:
+                    pass
             colors = ["red", "blue", "green", "purple", "orange"]
             pygame.display.flip()
 
@@ -379,8 +409,20 @@ class BUY(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
-                client.send_data(f"Player {self.number} turn {turn}")
+                client.send_data(f"BUY {self.number}")
 
+
+class AUCTION(pygame.sprite.Sprite):
+    def __init__(self, image, pos, number):
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect(center=pos)
+        self.number = number
+
+    def update(self, *args):
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(args[0].pos):
+                client.send_data(f"auction {self.number}")
 
 class TURN(pygame.sprite.Sprite):
     def __init__(self, image, pos, number):
@@ -392,9 +434,9 @@ class TURN(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
-                turn = random.randint(1, 6) + random.randint(1, 6)
-                print(turn)
-                PiecPlayers[self.number].turn(turn)
+                # turn = random.randint(1, 6) + random.randint(1, 6)
+                turn = 3
+                # PiecPlayers[self.number].turn(turn)
                 client.send_data(f"Player {self.number} turn {turn}")
 
 

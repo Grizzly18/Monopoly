@@ -20,7 +20,9 @@ class Card:
 
 
 g = {}
-chance = {'Заплатить всем 30': 'pay all 30'}
+chance = {'Заплатить всем 200': 'PAY ALL 200', 'Пройдите на старт и получите 200': 'START', 'Штраф за превышение скорости в раземере 300': 'PAY 300',
+        'Отправляйтесь в тюрьму':'JAIL', 'Переходите на поле Jackpot':'JACKPOT', 'Вернитесь на три шага назад':'Go back three steps', 'Каждый игрок платит вам по 100':'Each player pays you 100',
+        'Вы попали в аварию, заплатите 500 за протез':'You had an accident, pay 500 for a prosthesis'}
 
 
 
@@ -105,6 +107,8 @@ class Server(Socket):
                                         self.games[i].remove(str(listened_socket))
                                         await self.main_loop.sock_sendall(listened_socket, f"YOU LOSE".encode('utf-8'))
                                         time.sleep(0.5)
+                                elif (current_card.com == "chance"):
+                                    з
                                 elif (current_card.com == "money"):
                                     self.play[i][p].money += random.randint(100, 500)
                                 elif (current_card.com == "diamond"):

@@ -1,6 +1,3 @@
-from pyexpat.errors import messages
-from re import S
-from telnetlib import SE
 from Socket import Socket
 import asyncio
 import time

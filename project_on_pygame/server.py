@@ -1,3 +1,4 @@
+from pyexpat.errors import messages
 from re import S
 from telnetlib import SE
 from Socket import Socket
@@ -20,9 +21,10 @@ class Card:
 
 
 g = {}
-chance = {'Заплатить всем 200': 'PAY ALL 200', 'Пройдите на старт и получите 200': 'START', 'Штраф за превышение скорости в раземере 300': 'PAY 300',
-        'Отправляйтесь в тюрьму':'JAIL', 'Переходите на поле Jackpot':'JACKPOT', 'Вернитесь на три шага назад':'Go back three steps', 'Каждый игрок платит вам по 100':'Each player pays you 100',
-        'Вы попали в аварию, заплатите 500 за протез':'You had an accident, pay 500 for a prosthesis'}
+chance = {'Заплатить всем 200': 'PAY ALL 200', 'Вы выиграли в казино 1000': 'PAY 1000', 'Штраф за превышение скорости в раземере 300': 'PAY -300',
+          'Вы получаете наследство от своего дяди 500':'PAY 500', 'Заплатить всем 500': 'PAY ALL 500', 'Вы попали в аварию, заплатите 500 за протез': 'PAY -500'}
+chance_temp = ['Заплатить всем 200', 'Вы выиграли в казино 1000', 'Штраф за превышение скорости в раземере 300', 
+               'Вы получаете наследство от своего дяди 500',  'Вы попали в аварию, заплатите 500 за протез', 'Заплатить всем 500', 'Вы попали в аварию, заплатите 500 за протез']
 
 
 
@@ -81,10 +83,6 @@ class Server(Socket):
                                     for j in self.games[i]:
                                         await self.main_loop.sock_sendall(self.sock[j], f"Player {p} buy {self.play[i][p].pos}".encode('utf-8'))
                                     time.sleep(0.5)
-                            if "auction" in data.decode('utf-8'):
-                                pass
-                            if "prison" in data.decode('utf-8'):
-                                pass
                             if ("Player" in data.decode('utf-8') and "turn" in data.decode('utf-8')):
                                 for j in self.games[i]:
                                     await self.main_loop.sock_sendall(self.sock[j], data)
@@ -108,7 +106,37 @@ class Server(Socket):
                                         await self.main_loop.sock_sendall(listened_socket, f"YOU LOSE".encode('utf-8'))
                                         time.sleep(0.5)
                                 elif (current_card.com == "chance"):
-                                    з
+                                    r = random.randint(0, 6)
+                                    com = chance[chance_temp[r]]
+                                    if com.split(" ")[0] == "PAY" and com.split(" ")[1] == "ALL":
+                                        y, s = 0, 0
+                                        counter = 0
+                                        for j in self.games[i]:
+                                            if j == str(listened_socket):
+                                                y = counter
+                                            else:
+                                                self.play[i][counter].money += int(com.split(" ")[2])
+                                                s += int(com.split(" ")[2])
+                                            counter += 1
+                                        if (s <= self.play[i][y].money):
+                                            self.play[i][y].money -= s
+                                        else:
+                                            self.games[i].remove(str(listened_socket))
+                                            await self.main_loop.sock_sendall(listened_socket, f"YOU LOSE".encode('utf-8'))
+                                            time.sleep(0.5)
+                                        await self.main_loop.sock_sendall(listened_socket, f"CHANCE {chance_temp[r]}".encode('utf-8'))
+                                    elif com.split(" ")[0] == "PAY":
+                                        counter = 0
+                                        for j in self.games[i]:
+                                            if j == str(listened_socket):
+                                                self.play[i][counter].money += int(com.split(" ")[1])
+                                                if self.play[i][counter].money < 0:
+                                                    self.games[i].remove(str(listened_socket))
+                                                    await self.main_loop.sock_sendall(listened_socket, f"YOU LOSE".encode('utf-8'))
+                                                    time.sleep(0.5)
+                                                    break
+                                            counter += 1
+                                        await self.main_loop.sock_sendall(listened_socket, f"CHANCE {chance_temp[r]}".encode('utf-8'))
                                 elif (current_card.com == "money"):
                                     self.play[i][p].money += random.randint(100, 500)
                                 elif (current_card.com == "diamond"):
@@ -124,6 +152,8 @@ class Server(Socket):
                                 for u in self.games[i]:
                                     await self.main_loop.sock_sendall(self.sock[u], f"TURN {self.turns[i]}".encode('utf-8'))
                         if (len(self.games[i]) == 1 and i in self.turns):
+                            print(self.games[i][0])
+                            await self.main_loop.sock_sendall(self.sock[self.games[i][0]], f"YOU WIN".encode('utf-8'))
                             delel_games.append(i)
                     for i in delel_games:
                         del self.games[i]
@@ -203,7 +233,11 @@ class Server(Socket):
                         for j in self.games[i]:
                             if j not in self.temp:
                                 self.games[i].remove(j)
-                        if len(self.games[i]) < 1:
+                        if (len(self.games[i]) == 1):
+                            if (len(self.games[i]) == 1 and i in self.turns):
+                                print(self.games[i][0])
+                                await self.main_loop.sock_sendall(self.sock[self.games[i][0]], f"YOU WIN".encode('utf-8'))
+                        if len(self.games[i]) <= 1:
                             del self.games[i]
                     return
                 except:

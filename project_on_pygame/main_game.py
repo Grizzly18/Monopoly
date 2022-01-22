@@ -16,7 +16,7 @@ all_sprites = pygame.sprite.Group()
 all_objs = []
 functs = {None: None, 0: terminate, 1: "MainPage", 2: "Login"}
 FPS = 120
-messages, online, NowPage, login, players = "", False, "", "", ""
+messages, online, NowPage, login, players, chance = "", False, "", "", "", ""
 PiecPlayers = []
 
 
@@ -297,9 +297,15 @@ class Piece(pygame.sprite.Sprite):
                 self.rect = self.rect.move(0, -(HEIGHT * 0.0665))
 
 
+def timer_chance():
+    global chance
+    time.sleep(3)
+    chance = ''
+
+
 class Board:
     def __init__(self, g, main=False):
-        global NowPage, messages, PiecPlayers
+        global NowPage, messages, PiecPlayers, chance
         NowPage = "Game"
         resize_img("data/board.png", int(HEIGHT * 0.9), int(HEIGHT * 0.9))
         self.board = load_image('board2.png', colorkey=-1)
@@ -313,6 +319,7 @@ class Board:
         self.turn = messages
         client.send_data("check listgame")
         font1 = pygame.font.Font(None, 32)
+        font1 = pygame.font.Font(None, 24)
         all_objs.append(Button(load_image("logout2.png", colorkey=-1), (80, HEIGHT * 0.05), f"ExitGame#{g}"))
         time.sleep(0.5)
         self.all_games = translate(messages.split("&")[0])
@@ -337,7 +344,6 @@ class Board:
         money = [15000] * len(PiecPlayers)
         while NowPage == "Game":
             clock.tick(2)
-            print(messages)
             if ("Player" in messages and "turn" in messages):
                 p, t = messages.split(" ")[1], messages.split(" ")[3]
                 PiecPlayers[int(p)].turn(int(t))
@@ -351,6 +357,11 @@ class Board:
             if (messages == "BUY"):
                 temp = BUY(load_image("buy.png"), (WIDTH // 2, HEIGHT // 2), self.number)
                 all_objs.append(temp)
+            if ("CHANCE" in messages):
+                chance = ' '.join(messages.split(" ")[1:])
+                temp2 = LOSEORWIN(load_image("Chance.jpg"), (WIDTH // 2, HEIGHT // 2))
+                all_objs.append(temp2)
+                Thread(target=timer_chance, daemon=True).start()
             if ("Player" in messages and "buy" in messages):
                 p = int(messages.split(" ")[1])
                 if p == self.number:
@@ -389,6 +400,12 @@ class Board:
                     terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     all_sprites.update(event) 
+            if (chance == ''):
+                try:
+                    temp2.kill()
+                    screen.fill(pygame.Color(33, 40, 43))
+                except:
+                    pass
             screen.blit(self.board, self.pos_board)
             all_sprites.draw(screen)
             all_sprites.update()
@@ -404,6 +421,10 @@ class Board:
                     jj += 1
                 except:
                     pass
+            if (chance != ''):
+                text4 = font1.render(chance, True, pygame.Color('black'))
+                place4 = text4.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+                screen.blit(text4, place4)
             colors = ["red", "blue", "green", "purple", "orange"]
             pygame.display.flip()
 
@@ -458,7 +479,7 @@ class TURN(pygame.sprite.Sprite):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN:
             if self.rect.collidepoint(args[0].pos):
                 turn = random.randint(1, 6) + random.randint(1, 6)
-                # turn = 1
+                # turn = 2
                 # PiecPlayers[self.number].turn(turn)
                 client.send_data(f"Player {self.number} turn {turn}")
 
